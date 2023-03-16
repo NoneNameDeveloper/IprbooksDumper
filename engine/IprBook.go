@@ -20,13 +20,14 @@ func DumpBookData(bookId int) (string, []byte) {
 		log.Fatal(err)
 	}
 
+	//заголовки и куки для авторизации :TODO: autoreload auth
 	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0")
 	req.Header.Set("Accept", "*/*")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 	// req.Header.Set("Accept-Encoding", "gzip, deflate, br, identity")
 	req.Header.Set("Range", "bytes=0-2047")
 	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Cookie", "_ym_uid=167697153823982682; _ym_d=1676971538; SN4f61b1c8b1bd0=g69ntv4i5js3qpj27kmcp7rqu3; privacy-policy=1; IPRSMARTLogin=423238ac7f8404b0ef12a8c9eaf19222%7Ce527c51102f6df1855f4f6b3be343327; _ym_isad=2")
+	req.Header.Set("Cookie", "_ym_uid=167697153823982682; _ym_d=1676971538; privacy-policy=1; IPRSMARTLogin=423238ac7f8404b0ef12a8c9eaf19222%7Ce527c51102f6df1855f4f6b3be343327; _ym_isad=2; SN4f61b1c8b1bd0=g69ntv4i5js3qpj27kmcp7rqu3")
 	req.Header.Set("Sec-Fetch-Dest", "empty")
 	req.Header.Set("Sec-Fetch-Mode", "cors")
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
@@ -42,6 +43,11 @@ func DumpBookData(bookId int) (string, []byte) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// книга недоступна (куки устарели)
+	// if len(bodyText) == 25462 {
+	// 	log.Fatal("Wrong auth credentionals.")
+	// }
 
 	return (GetBookName(bookId)), (DecodeBytes(bodyText))
 }

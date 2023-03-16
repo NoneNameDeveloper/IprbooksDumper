@@ -12,9 +12,11 @@ import (
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
+
 	fmt.Print("Введите ID вашей книги -> ")
+
 	text, _ := reader.ReadString('\n')
-	// convert CRLF to LF
+
 	num := strings.Replace(text, "\n", "", -1)
 
 	res, err := strconv.Atoi(num)

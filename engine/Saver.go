@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// SaveToFile создание pdf файла
 func SaveToFile(name string, data []byte) {
 	f, err := os.Create(name + ".pdf")
 
