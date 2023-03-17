@@ -1,57 +1,56 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gocolly/colly"
 	"io"
-	"log"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"strconv"
+	"strings"
 )
 
-func DumpBookData(bookId int) (string, []byte) {
-	client := &http.Client{}
+// DumpBookData получает декодированный ряд байтов книги и ее название
+func DumpBookData(bookId int) (string, []byte, error) {
+	// создаем авторизованного клиента
+	client := Auth()
 
+	// ссылка на зашифрованный контент книги
 	link := "https://www.iprbookshop.ru/pdfstream.php?publicationId=" + strconv.Itoa(bookId) + "&part=null"
 
-	req, err := http.NewRequest("GET", link, nil)
+	requestModel, err := http.NewRequest("GET", link, nil)
 
+	// сайт упал или какие то другие неполадки
 	if err != nil {
-		log.Fatal(err)
+		return "", []byte{}, errors.New("Site is down!")
 	}
 
-	//заголовки и куки для авторизации :TODO: autoreload auth
-	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0")
-	req.Header.Set("Accept", "*/*")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
-	// req.Header.Set("Accept-Encoding", "gzip, deflate, br, identity")
-	req.Header.Set("Range", "bytes=0-2047")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Cookie", "_ym_uid=167697153823982682; _ym_d=1676971538; privacy-policy=1; IPRSMARTLogin=423238ac7f8404b0ef12a8c9eaf19222%7Ce527c51102f6df1855f4f6b3be343327; _ym_isad=2; SN4f61b1c8b1bd0=g69ntv4i5js3qpj27kmcp7rqu3")
-	req.Header.Set("Sec-Fetch-Dest", "empty")
-	req.Header.Set("Sec-Fetch-Mode", "cors")
-	req.Header.Set("Sec-Fetch-Site", "same-origin")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	bodyText, err := io.ReadAll(resp.Body)
+	// делаем запрос на сайт
+	response, err := client.Do(requestModel)
 
 	if err != nil {
-		log.Fatal(err)
+		return "", []byte{}, errors.New("Site is down!")
 	}
 
-	// книга недоступна (куки устарели)
-	// if len(bodyText) == 25462 {
-	// 	log.Fatal("Wrong auth credentionals.")
-	// }
+	// закрываем запрос во избежание потерь ресурсов
+	defer response.Body.Close()
 
-	return (GetBookName(bookId)), (DecodeBytes(bodyText))
+	bodyText, err := io.ReadAll(response.Body)
+
+	if err != nil {
+		return "", []byte{}, errors.New("Error occured!")
+	}
+
+	if len(bodyText) == 25462 {
+		return "", []byte{}, errors.New("Book doesn`t exists!")
+	}
+
+	return GetBookName(bookId), DecodeBytes(bodyText), nil
 }
 
+// Min поиск минимального значения в массиве
 func Min(arr []int) int {
 	min := arr[0]
 
@@ -63,6 +62,39 @@ func Min(arr []int) int {
 	return min
 }
 
+// Auth возвращает авторизованный клиент
+func Auth() http.Client {
+	authUrl := "https://www.iprbookshop.ru/95835"
+
+	// данные для авторизации ;)
+	data := url.Values{}
+	data.Set("action", "login")
+	data.Set("username", "mtuci")
+	data.Set("password", "2xNTqGZL")
+	data.Set("rememberme", "1")
+
+	client := &http.Client{}
+	r, _ := http.NewRequest(http.MethodPost, authUrl, strings.NewReader(data.Encode())) // URL-encoded payload
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	// запрос на авторизацию
+	authReq, _ := client.Do(r)
+
+	// создаем дальнейший контейнер для куки авторизации
+	cookieJar, _ := cookiejar.New(nil)
+
+	url, _ := url.Parse(authUrl)
+
+	// устанавливаем куки авторизации
+	cookieJar.SetCookies(url, authReq.Cookies())
+
+	// помещаем их в клиент
+	client = &http.Client{Jar: cookieJar}
+
+	return *client
+}
+
+// DecodeBytes декодирует набор байтов
 func DecodeBytes(b []byte) []byte {
 
 	for i := 0; i < len(b); i += 2048 {
@@ -73,10 +105,12 @@ func DecodeBytes(b []byte) []byte {
 	return b
 }
 
+// Name контейнер для имени книги
 type Name struct {
 	name string
 }
 
+// Получает название книги с сайта
 func GetBookName(bookId int) string {
 	link := "https://www.iprbookshop.ru/" + strconv.Itoa(bookId) + ".html"
 

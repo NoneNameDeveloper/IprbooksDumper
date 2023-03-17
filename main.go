@@ -25,7 +25,11 @@ func main() {
 		log.Fatal("Не целое число..")
 	}
 
-	name, data := engine.DumpBookData(res)
+	name, data, err := engine.DumpBookData(res)
+
+	if err != nil {
+		panic(err)
+	}
 
 	fmt.Println("Название: " + name)
 
