@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gocolly/colly"
 	"io"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -12,8 +13,29 @@ import (
 	"strings"
 )
 
+type DumpData struct {
+	Name      string
+	BookBytes []byte
+}
+
 // DumpBookData получает декодированный ряд байтов книги и ее название
-func DumpBookData(bookId int) (string, []byte, error) {
+func DumpBookData(bookIdList []int) (resArray []DumpData) {
+
+	for _, bookId := range bookIdList {
+		resValue, err := dumpData(bookId)
+
+		if err != nil {
+			log.Fatal(err)
+			continue
+		}
+
+		resArray = append(resArray, resValue)
+	}
+
+	return resArray
+}
+
+func dumpData(bookId int) (DumpData, error) {
 	// создаем авторизованного клиента
 	client := Auth()
 
@@ -24,14 +46,14 @@ func DumpBookData(bookId int) (string, []byte, error) {
 
 	// сайт упал или какие то другие неполадки
 	if err != nil {
-		return "", []byte{}, errors.New("Site is down!")
+		return DumpData{}, errors.New("Site is down!")
 	}
 
 	// делаем запрос на сайт
 	response, err := client.Do(requestModel)
 
 	if err != nil {
-		return "", []byte{}, errors.New("Site is down!")
+		return DumpData{}, errors.New("Site is down!")
 	}
 
 	// закрываем запрос во избежание потерь ресурсов
@@ -40,14 +62,14 @@ func DumpBookData(bookId int) (string, []byte, error) {
 	bodyText, err := io.ReadAll(response.Body)
 
 	if err != nil {
-		return "", []byte{}, errors.New("Error occured!")
+		return DumpData{}, errors.New("Site is down!")
 	}
 
 	if len(bodyText) == 25462 {
-		return "", []byte{}, errors.New("Book doesn`t exists!")
+		return DumpData{}, errors.New("Book doesn`t exists!")
 	}
 
-	return GetBookName(bookId), DecodeBytes(bodyText), nil
+	return DumpData{Name: GetBookName(bookId), BookBytes: DecodeBytes(bodyText)}, nil
 }
 
 // Min поиск минимального значения в массиве
