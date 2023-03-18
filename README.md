@@ -1,6 +1,6 @@
 <!-- ⚠️ This README has been generated from the file(s) "blueprint.md" ⚠️-->
 [![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/colored.png)](#-iprbooks-bulk-dumper)
-# <p align=center>➤ 📚 Iprbooks Bulk Dumper
+# <p align=center>📚 Iprbooks Bulk Dumper
 
 
 
