@@ -2,7 +2,6 @@ package engine
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gocolly/colly"
 	"io"
 	"log"
@@ -46,14 +45,14 @@ func dumpData(bookId int) (DumpData, error) {
 
 	// сайт упал или какие то другие неполадки
 	if err != nil {
-		return DumpData{}, errors.New("Site is down!")
+		return DumpData{}, errors.New("Сайт недоступен!")
 	}
 
 	// делаем запрос на сайт
 	response, err := client.Do(requestModel)
 
 	if err != nil {
-		return DumpData{}, errors.New("Site is down!")
+		return DumpData{}, errors.New("Сайт недоступен!")
 	}
 
 	// закрываем запрос во избежание потерь ресурсов
@@ -62,11 +61,11 @@ func dumpData(bookId int) (DumpData, error) {
 	bodyText, err := io.ReadAll(response.Body)
 
 	if err != nil {
-		return DumpData{}, errors.New("Site is down!")
+		return DumpData{}, errors.New("Сайт недоступен!")
 	}
 
 	if len(bodyText) == 25462 {
-		return DumpData{}, errors.New("Book doesn`t exists!")
+		return DumpData{}, errors.New("Книги не существует!")
 	}
 
 	return DumpData{Name: GetBookName(bookId), BookBytes: DecodeBytes(bodyText)}, nil
@@ -147,10 +146,6 @@ func GetBookName(bookId int) string {
 	})
 
 	c.Visit(link)
-
-	c.OnError(func(response *colly.Response, err error) {
-		fmt.Println("OnError", err)
-	})
 
 	return Name.name
 }

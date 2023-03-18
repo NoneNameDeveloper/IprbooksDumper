@@ -26,8 +26,10 @@ func main() {
 	for _, val := range idList {
 		convertId, err := strconv.Atoi(strings.TrimSpace(val))
 
+		// если введена что-то не то
 		if err != nil {
-			log.Fatal("%s is not valid id.", val)
+			log.Println("Не валидный ID: ", val)
+			continue
 		}
 
 		idListRes = append(idListRes, convertId)
@@ -36,14 +38,14 @@ func main() {
 	resInfoList := engine.DumpBookData(idListRes)
 
 	if len(resInfoList) == 0 {
-		panic("All ids is wrong.")
+		panic("Все ID не валидные.")
 	}
 
 	// процессинг айдишников
 	for _, dumpBook := range resInfoList {
 		fmt.Println("Название: " + dumpBook.Name)
 		engine.SaveToFile(dumpBook.Name, dumpBook.BookBytes)
-		fmt.Println("Файл записан.\n")
+		fmt.Println("Файл записан.")
 	}
 
 }
